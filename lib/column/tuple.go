@@ -514,6 +514,24 @@ func (col *Tuple) AppendRow(v any) error {
 	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
+
+	if tuple2, ok := v.(Tuple2); ok {
+		if 2 != len(col.columns) {
+			return &Error{
+				ColumnType: string(col.chType),
+				Err:        fmt.Errorf("invalid size. expected %d got %d", len(col.columns), 2),
+			}
+		}
+		elem1, elem2 := tuple2.Get()
+		if err := col.columns[0].AppendRow(elem1); err != nil {
+			return err
+		}
+		if err := col.columns[1].AppendRow(elem2); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	switch value.Kind() {
 	case reflect.Struct:
 		if valuer, ok := v.(driver.Valuer); ok {
@@ -621,23 +639,6 @@ func (col *Tuple) AppendRow(v any) error {
 			if err := col.columns[i].AppendRow(elem.Interface()); err != nil {
 				return err
 			}
-		}
-		return nil
-	}
-
-	if tuple2, ok := v.(Tuple2); ok {
-		if 2 != len(col.columns) {
-			return &Error{
-				ColumnType: string(col.chType),
-				Err:        fmt.Errorf("invalid size. expected %d got %d", len(col.columns), 2),
-			}
-		}
-		elem1, elem2 := tuple2.Get()
-		if err := col.columns[0].AppendRow(elem1); err != nil {
-			return err
-		}
-		if err := col.columns[1].AppendRow(elem2); err != nil {
-			return err
 		}
 		return nil
 	}
